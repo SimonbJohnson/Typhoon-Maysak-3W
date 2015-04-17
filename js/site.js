@@ -7,6 +7,7 @@ var config = {
     whoFieldName:"organisation",
     whatFieldName:"activity",
     whereFieldName:"adm_code",
+    statusFieldName:"status",
     geo:"data/micronesia.json",
     joinAttribute:"MID",
     colors:['#81d4fa','#4fc3f7','#29b6f6','#03a9f4','#039be5','#0288d1','#0277bd','#01579b']
@@ -24,19 +25,22 @@ function generate3WComponent(config,data,geom){
     var whoChart = dc.rowChart('#hdx-3W-who');
     var whatChart = dc.rowChart('#hdx-3W-what');
     var whereChart = dc.leafletChoroplethChart('#hdx-3W-where');
+    var statusChart = dc.rowChart('#hdx-3W-status');
 
     var cf = crossfilter(data);
 
     var whoDimension = cf.dimension(function(d){ return d[config.whoFieldName]; });
     var whatDimension = cf.dimension(function(d){ return d[config.whatFieldName]; });
     var whereDimension = cf.dimension(function(d){ return d[config.whereFieldName]; });
+    var statusDimension = cf.dimension(function(d){ return d[config.statusFieldName]; });
 
     var whoGroup = whoDimension.group();
     var whatGroup = whatDimension.group();
     var whereGroup = whereDimension.group();
+    var statusGroup = statusDimension.group();
     var all = cf.groupAll();
 
-    whoChart.width($('#hdx-3W-who').width()).height(220)
+    whoChart.width($('#hdx-3W-who').width()).height(200)
             .dimension(whoDimension)
             .group(whoGroup)
             .elasticX(true)
@@ -49,7 +53,7 @@ function generate3WComponent(config,data,geom){
             .colorAccessor(function(d, i){return 3;})
             .xAxis().ticks(5);
 
-    whatChart.width($('#hdx-3W-what').width()).height(220)
+    whatChart.width($('#hdx-3W-what').width()).height(200)
             .dimension(whatDimension)
             .group(whatGroup)
             .elasticX(true)
@@ -60,7 +64,20 @@ function generate3WComponent(config,data,geom){
             .colors(config.colors)
             .colorDomain([0,7])
             .colorAccessor(function(d, i){return 3;})
-            .xAxis().ticks(5);  
+            .xAxis().ticks(5);
+    
+    statusChart.width($('#hdx-3W-status').width()).height(150)
+            .dimension(statusDimension)
+            .group(statusGroup)
+            .elasticX(true)
+            .data(function(group) {
+                return group.top(15);
+            })    
+            .labelOffsetY(13)
+            .colors(config.colors)
+            .colorDomain([0,7])
+            .colorAccessor(function(d, i){return 3;})
+            .xAxis().ticks(5); 
 
     dc.dataCount('#count-info')
             .dimension(cf)
@@ -84,6 +101,36 @@ function generate3WComponent(config,data,geom){
             .featureKeyAccessor(function(feature){
                 return Math.floor(feature.properties[(config.joinAttribute)]);
             });
+            
+        dc.dataTable("#data-table")
+                .dimension(whatDimension)                
+                .group(function (d) {
+                    return d[config.whatFieldName];
+                })
+                .size(650)
+                .columns([
+                    function(d){
+                       return d.municipality; 
+                    },
+                    function(d){
+                       return d.activity; 
+                    },
+                    function(d){
+                       return d.organisation; 
+                    },
+                    function(d){
+                       return d.status; 
+                    },
+                    function(d){
+                       return d.item; 
+                    },
+                    function(d){
+                       return d.quantity; 
+                    }
+                ])
+                .renderlet(function (table) {
+                    table.selectAll(".dc-table-group").classed("info", true);
+                });            
                                 
     dc.renderAll();
     
@@ -93,7 +140,7 @@ function generate3WComponent(config,data,geom){
         .attr('class', 'x-axis-label')
         .attr('text-anchor', 'middle')
         .attr('x', $('#hdx-3W-who').width()/2)
-        .attr('y', 220)
+        .attr('y', 200)
         .text('Activities');
 
     var g = d3.selectAll('#hdx-3W-what').select('svg').append('g');
@@ -102,8 +149,17 @@ function generate3WComponent(config,data,geom){
         .attr('class', 'x-axis-label')
         .attr('text-anchor', 'middle')
         .attr('x', $('#hdx-3W-what').width()/2)
-        .attr('y', 220)
-        .text('Activities'); 
+        .attr('y', 200)
+        .text('Activities');
+
+    var g = d3.selectAll('#hdx-3W-status').select('svg').append('g');
+    
+    g.append('text')
+        .attr('class', 'x-axis-label')
+        .attr('text-anchor', 'middle')
+        .attr('x', $('#hdx-3W-status').width()/2)
+        .attr('y', 150)
+        .text('Activities');
 
 }
 
